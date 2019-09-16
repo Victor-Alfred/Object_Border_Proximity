@@ -1,6 +1,4 @@
-%% edited built-in ginput function to change the color of cross hairs
-
-
+%% edited the built-in ginput function to change the color of cross hairs, on line 308
 
 function [out1,out2,out3] = ginput(arg1)
 %GINPUT Graphical input from mouse.
