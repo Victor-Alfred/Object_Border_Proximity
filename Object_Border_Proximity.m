@@ -285,3 +285,5 @@ end
 % save total number of images, cells and objects analysed
 cd(analysis_folder)
 csvwrite('total.csv', total_no)
+
+close all; clear variables; clc
