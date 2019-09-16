@@ -1,7 +1,6 @@
 
 close all; clear variables; clc
 
-
 %% Setting and creating directories
 
 currdir = pwd;
@@ -10,6 +9,7 @@ filedir = uigetdir();
 cd(filedir);
 filedir_file = dir('*.tif');
 
+% contains information on the cell borders
 borders = [filedir, '/borders/'];
 cd(borders)
 
@@ -18,7 +18,7 @@ files_tifs = [filedir, '/binary_tifs'];
 cd(files_tifs)
 object_files = dir('*.tif');
 
-% creating result directories
+% creating main result directory
 if exist([filedir, '/analysis'],'dir') == 0
     mkdir(filedir,'/analysis');
 end
@@ -45,8 +45,9 @@ for kk = 1:numel(filedir_file)
     [B,L,N,A] = bwboundaries(I,'holes');
     im_cell_data = regionprops(L, 'Centroid');
 
+    % keep track of each image analysed
     no_analysed_images = no_analysed_images + 1
-
+    
     % create results directory for each image
     if exist ([filedir, ['/analysis/', num2str(kk),'/by_object'], 'dir']) == 0
         mkdir (filedir, ['/analysis/', num2str(kk), '/by_object']);
@@ -62,8 +63,6 @@ for kk = 1:numel(filedir_file)
         mkdir (filedir, ['/analysis/', num2str(kk), '/rel_distances']);
     end
     results_sheets = [filedir, ['/analysis/', num2str(kk), '/rel_distances']];
-
-
 
     % determine centroid position for each cell in the image
     for ii=1:length(im_cell_data)
@@ -103,19 +102,16 @@ for kk = 1:numel(filedir_file)
     hold off
     print(Image1, '-dtiff', '-r300', Output_Graph);
 
-    % removes first array which is the 'whole' image
+    % removes first cell which is the 'whole' image
     B_fixed = B;
-    B_fixed(1) = []; % Note: boundary coordinates are orgnaised in (y, x) format
-
+    B_fixed(1) = []; % Note: boundary coordinates are organised in (y, x) format
 
     reply = questdlg(strcat('Do you want to determine centroids of objects automatically?'), 'Settings', 'Yes', 'No', 'Yes');
-
     for ww = 1:length(B_fixed)
         close all
         I_mask = imdilate(poly2mask(B_fixed{ww}(:,2),B_fixed{ww}(:,1),im_x,im_y), strel('diamond', 1));
         % read in binary image containing objects
         cd(files_tifs)
-        %for aa = 1:numel(object_files)
             Q = [num2str(kk),'.tif'];
             I_object = imread(Q); 
             I_object = logical(I_object);
@@ -125,7 +121,8 @@ for kk = 1:numel(filedir_file)
             ROI2 = logical(ROI); %
             % Image2 = figure('visible','off');
             % imshow(ROI);
-
+            
+            % keep track of cells analysed
             no_analysed_cells = no_analysed_cells + 1
 
             if strcmp(reply, 'Yes')
@@ -136,8 +133,7 @@ for kk = 1:numel(filedir_file)
                     y_centroid_object(jj) = im_object_data(jj).Centroid(2);
                 end
             elseif strcmp(reply, 'No')
-                 %% determine centroid positions manually; press enter key when finished
-                % use 
+                 % to determine centroid positions manually; press enter key when finished
                 try, 
                     imshow(ROI2), 
                     hold on, 
@@ -148,6 +144,7 @@ for kk = 1:numel(filedir_file)
                 catch end        
             end 
     
+            % loop through individual objects within each cell
             for jj=1:length(im_object_data)
                 x_centroid_object = x_centroid_object(1:length(im_object_data));
                 y_centroid_object = y_centroid_object(1:length(im_object_data));
@@ -156,7 +153,8 @@ for kk = 1:numel(filedir_file)
                 y_centroid_object = y_centroid_object(:);
 
                 C = imfuse(I_mask, ~ROI2); %imshow(C);
-
+                
+                % keep track of objects analysed in the session
                 no_analysed_objects = no_analysed_objects + 1
 
                 % showing centroid positions of objects within mask
@@ -167,7 +165,7 @@ for kk = 1:numel(filedir_file)
                 plot(x_centroid_object, y_centroid_object, 'r*')
                 hold off
 
-                %% Obtain a straight line connecting the centroids, and the coefficients 
+                %% Obtain the coefficients of a straight line connecting object and cell centroids
                 x = [x_centroid_cell(ww), x_centroid_object(jj)];
                 y = [y_centroid_cell(ww), y_centroid_object(jj)];
                 %figure, imshow(I_mask); ; hold on; plot(x,y);
@@ -192,7 +190,7 @@ for kk = 1:numel(filedir_file)
 
                 % Border pixel coordinates for cell 1 is contained in array, B_fixed{1}
                 % but stored in [y, x] format... B_coord = flip(B_fixed{1}, 2) not needed anymore
-                %change matrix from [y, x] to [x, y]
+                % change matrix from [y, x] to [x, y]
                 B_x = B_fixed{ww}(:,2);
                 B_y = B_fixed{ww}(:,1);
 
@@ -204,7 +202,6 @@ for kk = 1:numel(filedir_file)
 
                 [x_int, y_int] = polyxpoly(x1, y1, B_x, B_y, 'unique'); % contains the line_border intercept
 
-                
                 Image6 = figure('visible','on');
                 set(gca,'Ydir','reverse')
                 mapshow(x_int,y_int,'DisplayType','point','Marker','o');
@@ -218,14 +215,11 @@ for kk = 1:numel(filedir_file)
                 plot(x_centroid_object(jj), y_centroid_object(jj), '*b')
                 hold off
 
-                % distances from object to both border-line intercepts
+                % distances from object to both border-straight line intercepts
                 dist1 = pdist([x_centroid_object(jj), y_centroid_object(jj); x_int(1), y_int(1)], 'euclidean');
-
                 dist2 = pdist([x_centroid_object(jj), y_centroid_object(jj); x_int(2), y_int(2)], 'euclidean');
 
-
                 % select border closest to the object and store in new variable 'bl_int'
-                % dist3 is new distance between object and the nearest border border and object
                 if (dist1 < dist2)
                     bl_int = [x_int(1), y_int(1)];
                 elseif (dist2 < dist1)
@@ -249,10 +243,9 @@ for kk = 1:numel(filedir_file)
 
                 rel_dist = (dist3/dist4); rel_dist(rel_dist > 1) = 1;
                 rel_distances(jj) = rel_dist;
-
                 
+                % keep track of number of images, cells and objects analysed in the session
                 total_no = cat(3, no_analysed_images, no_analysed_cells, no_analysed_objects);
-
 
                 % cd(results_mask)
                 % Output_Graph = [num2str(ww),'_masks.tif'];
@@ -264,12 +257,12 @@ for kk = 1:numel(filedir_file)
                 hold off
                 print(Image3, '-dtiff', '-r300', Output_Graph)
 
-                % cd(results_ordered)
+                % cd(results_mask)
                 % Output_Graph = [num2str(jj),'_centroid_object_line.tif'];
                 % hold off
                 % print(Image4, '-dtiff', '-r300', Output_Graph)
 
-                % cd(results_ordered)
+                % cd(results_mask)
                 % Output_Graph = [num2str(ww),'_border_outline.tif'];
                 % hold off
                 % print(Image5, '-dtiff', '-r300', Output_Graph)
@@ -281,10 +274,10 @@ for kk = 1:numel(filedir_file)
 
             end
 
+            % save distances to csv file
             cd(results_sheets)
             csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:))
-       
-        %end
+
     end
 
 end
@@ -292,19 +285,3 @@ end
 % save total number of images, cells and objects analysed
 cd(analysis_folder)
 csvwrite('total.csv', total_no)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
