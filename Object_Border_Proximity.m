@@ -107,6 +107,7 @@ for kk = 1:numel(filedir_file)
     B_fixed(1) = []; % Note: boundary coordinates are organised in (y, x) format
 
     reply = questdlg(strcat('Do you want to determine centroids of objects automatically?'), 'Settings', 'Yes', 'No', 'Yes');
+    
     for ww = 1:length(B_fixed)
         close all
         I_mask = imdilate(poly2mask(B_fixed{ww}(:,2),B_fixed{ww}(:,1),im_x,im_y), strel('diamond', 1));
