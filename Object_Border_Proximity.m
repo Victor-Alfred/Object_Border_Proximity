@@ -140,6 +140,7 @@ for kk = 1:numel(filedir_file)
                     hold on, 
                     % use the getpts() function; useful to see marked objects; backspace to remove previous point
                     [x_centroid_object, y_centroid_object] = getpts();
+                    im_object_data = x_centroid_object;
                     % alternatively use a color-customised version of ginput, my_ginput located in the same directory 
                     %[x_centroid_object, y_centroid_object] = my_ginput();
                 catch end        
