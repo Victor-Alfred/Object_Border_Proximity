@@ -136,7 +136,8 @@ for kk = 1:numel(filedir_file)
             elseif strcmp(reply, 'No')
                  % to determine centroid positions manually; press enter key when finished
                 try, 
-                    imshow(ROI2), 
+                    imshow(ROI2),
+                    set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1])
                     hold on, 
                     % use the getpts() function; useful to see marked objects; backspace to remove previous point
                     [x_centroid_object, y_centroid_object] = getpts();
