@@ -280,7 +280,7 @@ for kk = 1:numel(object_files)
 
     end
     
-      % save distances to csv file
+      % save distances from each image to csv
             cd(results_by_image)
             if ~isempty(rel_distances)
                 csvwrite(['Image' num2str(kk), '_rel_distances.csv'], rel_distances_nnz)
