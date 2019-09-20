@@ -26,9 +26,9 @@ end
 analysis_folder = [filedir, '/analysis'];
 
 %% counter for objects analysed
-% no_analysed_images = 0;
-% no_analysed_cells = 0;
-% no_analysed_objects = 0;
+no_analysed_images = 0;
+no_analysed_cells = 0;
+no_analysed_objects = 0;
 
 % rel_distances = zeros(N, 1);
 
@@ -54,7 +54,7 @@ for kk = 1:numel(object_files)
     im_cell_data = regionprops(L, 'Centroid');
 
     % keep track of each image analysed
-%     no_analysed_images = no_analysed_images + 1
+    no_analysed_images = no_analysed_images + 1
     
     % create results directory for each image
     if exist ([filedir, ['/analysis/', num2str(kk),'/by_object'], 'dir']) == 0
@@ -154,7 +154,7 @@ for kk = 1:numel(object_files)
                 C = imfuse(I_mask, ROI,'falsecolor','Scaling','joint','ColorChannels',[1 2 0]);
                 
                 % keep track of objects analysed in the session
-%                 no_analysed_objects = no_analysed_objects + 1
+                no_analysed_objects = no_analysed_objects + 1
 
                 % showing centroid positions of objects within mask
                 %imshow(ROI); hold on, plot(x_centroid_object, y_centroid_object, 'r*')
@@ -249,7 +249,7 @@ for kk = 1:numel(object_files)
 %                  end
                 
                 % keep track of number of images, cells and objects analysed in the session
-%                 total_no = cat(3, no_analysed_images, no_analysed_cells, no_analysed_objects);
+                total_no = cat(3, no_analysed_images, no_analysed_cells, no_analysed_objects);
 
                 % cd(results_mask)
                 % Output_Graph = [num2str(ww),'_masks.tif'];
@@ -277,12 +277,15 @@ for kk = 1:numel(object_files)
                 print(Image6, '-dtiff', '-r300', Output_Graph)
 
             end
-
-            % save distances to csv file
+           % save distances to csv file
             cd(results_sheets)
-            csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:))
-%         dlmwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:), 'delimiter', ',', 'precision', 9);
-          
+            if ~isempty(rel_distances)
+                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:))
+            else
+                % do nothing
+            end
+            
+%         dlmwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:), 'delimiter', ',', 'precision', 9); 
     end
 
 end

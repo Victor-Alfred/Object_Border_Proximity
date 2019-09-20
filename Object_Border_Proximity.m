@@ -283,7 +283,11 @@ for kk = 1:numel(filedir_file)
 
             % save distances to csv file
             cd(results_sheets)
-            csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:))
+            if ~isempty(rel_distances)
+                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:))
+            else
+                % do nothing
+            end
 
     end
 
