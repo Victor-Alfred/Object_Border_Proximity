@@ -275,7 +275,7 @@ for kk = 1:numel(object_files)
                 % do nothing
             end
             
-            % save data for all images together
+            % concatenate for all images in the folder analysed
             all_dist = [all_dist; rel_distances_nnz];
 
     end
