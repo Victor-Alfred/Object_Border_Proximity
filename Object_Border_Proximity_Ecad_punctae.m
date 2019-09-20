@@ -29,6 +29,8 @@ analysis_folder = [filedir, '/analysis'];
 no_analysed_images = 0;
 no_analysed_cells = 0;
 no_analysed_objects = 0;
+all_dist = 0;
+rel_distances = [];
 
 % rel_distances = zeros(N, 1);
 
@@ -47,9 +49,6 @@ for kk = 1:numel(object_files)
     I(1,:) = 0;
     I(end,:) = 0;
     [im_x, im_y] = size(I);
-%     se90I = strel('line', 2, 90);
-%     se0I = strel('line', 2, 0);
-%     I3 = imdilate(I, [se90I se0I]);
     [B,L,N,A] = bwboundaries(I,'holes');
     im_cell_data = regionprops(L, 'Centroid');
 
@@ -71,6 +70,8 @@ for kk = 1:numel(object_files)
         mkdir (filedir, ['/analysis/', num2str(kk), '/rel_distances']);
     end
     results_sheets = [filedir, ['/analysis/', num2str(kk), '/rel_distances']];
+    
+    results_by_image = [filedir, '/analysis/', num2str(kk)];
 
     % determine centroid position for each cell in the image
     for ii=1:length(im_cell_data)
@@ -128,7 +129,7 @@ for kk = 1:numel(object_files)
             % imshow(ROI);
             
             % keep track of cells analysed
-%             no_analysed_cells = no_analysed_cells + 1
+            no_analysed_cells = no_analysed_cells + 1
             
             try, 
                 imshow(ROI, [80 200]), 
@@ -143,7 +144,8 @@ for kk = 1:numel(object_files)
           
     
             % loop through individual objects within each cell
-            rel_distances = zeros(length(x_centroid_object), 1);
+            obj_distances = zeros(length(x_centroid_object), 1);
+            
             for jj=1:length(x_centroid_object)
                 x_centroid_object = x_centroid_object(1:length(x_centroid_object));
                 y_centroid_object = y_centroid_object(1:length(x_centroid_object));
@@ -236,40 +238,27 @@ for kk = 1:numel(object_files)
                 dist4 = pdist([x_centroid_cell(ww), y_centroid_cell(ww); bl_int_x, bl_int_y], 'euclidean');
                 % alternatively use this; dist4 = norm([bl_int_x, bl_int_y] - [x_centroid_cell(1), y_centroid_cell(1)])
 
-                % proportion of distance (rel_dist) between border and cell centroid where object is located
+                % Proportion of distance (rel_dist) between border and cell centroid where object is located
                 % A value of '0' means an object is located in the cell centre while
                 % A value of '1' means an object is right on the cell border
 
-                rel_dist = (dist3/dist4); rel_dist(rel_dist > 1) = 1;
-                rel_distances(jj) = rel_dist;
+                rel_dist = (dist3/dist4); 
+                rel_dist(rel_dist > 1) = [];
                 
-%                  if ~isempty(rel_dist) 
-%                  else
-                    % do nothing
-%                  end
+                % collect data from all objects within a cell
+                obj_distances(jj) = rel_dist;
+                
+                % save data from all cells within an image
+                rel_distances(ww, jj) = nonzeros(rel_dist);
+                rel_distances_nnz = nonzeros(rel_distances);
                 
                 % keep track of number of images, cells and objects analysed in the session
                 total_no = cat(3, no_analysed_images, no_analysed_cells, no_analysed_objects);
-
-                % cd(results_mask)
-                % Output_Graph = [num2str(ww),'_masks.tif'];
-                % hold off
-                % print(Image2, '-dtiff', '-r300', Output_Graph)
 
                 cd(results_mask)
                 Output_Graph = ['Image' num2str(kk), '_cell' num2str(ww), '_mask_objects'];
                 hold off
                 print(Image3, '-dtiff', '-r300', Output_Graph)
-
-                % cd(results_mask)
-                % Output_Graph = [num2str(jj),'_centroid_object_line.tif'];
-                % hold off
-                % print(Image4, '-dtiff', '-r300', Output_Graph)
-
-                % cd(results_mask)
-                % Output_Graph = [num2str(ww),'_border_outline.tif'];
-                % hold off
-                % print(Image5, '-dtiff', '-r300', Output_Graph)
 
                 cd(results_by_object)
                 Output_Graph = ['Image' num2str(kk), '_cell' num2str(ww), '_object' num2str(jj), '_figure.tif'];
@@ -277,20 +266,33 @@ for kk = 1:numel(object_files)
                 print(Image6, '-dtiff', '-r300', Output_Graph)
 
             end
-           % save distances to csv file
+            
+           % save object distances to csv file
             cd(results_sheets)
-            if ~isempty(rel_distances)
-                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:))
+            if ~isempty(obj_distances)
+                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], obj_distances(:))
             else
                 % do nothing
             end
             
-%         dlmwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:), 'delimiter', ',', 'precision', 9); 
+            % save data for all images together
+            all_dist = [all_dist; rel_distances_nnz];
+
     end
+    
+      % save distances to csv file
+            cd(results_by_image)
+            if ~isempty(rel_distances)
+                csvwrite(['Image' num2str(kk), '_rel_distances.csv'], rel_distances_nnz)
+            else
+                % do nothing
+            end
 
 end
 
 % save total number of images, cells and objects analysed
 cd(analysis_folder)
 csvwrite('total.csv', total_no)
+all_dist(1) = [];
+csvwrite('all_distances.csv', all_dist)
 close all; clear variables; clc
