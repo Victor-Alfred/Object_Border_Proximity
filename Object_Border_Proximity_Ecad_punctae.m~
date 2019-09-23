@@ -247,7 +247,8 @@ for kk = 1:numel(object_files)
                 rel_dist(rel_dist > 1) = [];
                 
                 % collect data from all objects within a cell
-                obj_distances(jj) = rel_dist; 
+                obj_distances(jj) = rel_dist;
+                xy_centrod = [x_centroid_object(jj), y_centroid_object(jj)]
                 
                 % save data from all cells within an image
                 rel_distances(ww, jj) = nonzeros(rel_dist);
@@ -276,10 +277,10 @@ for kk = 1:numel(object_files)
                 % do nothing
             end
             
-            cd(results_sheets)
-            if ~isempty(x_centroid_object)
-                xy_centroid = [x_centroid_object, y_centroid_object];
-                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_xy_centroid.csv'], xy_centroid)
+            cd(centroid_sheets)
+            if ~isempty(obj_distances)
+                centroid_xy = [x_centroid, y_centroid];
+                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], obj_distances(:))
             else
                 % do nothing
             end
