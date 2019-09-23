@@ -133,7 +133,7 @@ for kk = 1:numel(object_files)
             no_analysed_cells = no_analysed_cells + 1
             
             try, 
-                imshow(ROI, [80 200]), 
+                imshow(ROI, [100 200]), 
                 title(['Image' num2str(kk), ' Cell' num2str(ww)])
                 set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
                 hold on, 
