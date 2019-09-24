@@ -1,0 +1,7 @@
+changes to make to object proximity script
+
+% organise data output similar to the Ecad script....
+
+% skip lines with more than 2 border intersections
+
+% 
