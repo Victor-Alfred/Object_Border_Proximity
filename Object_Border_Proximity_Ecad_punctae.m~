@@ -133,7 +133,7 @@ for kk = 1:numel(object_files)
             no_analysed_cells = no_analysed_cells + 1
             
             try, 
-                imshow(ROI, [80 200]), 
+                imshow(ROI, [120 280]), 
                 title(['Image' num2str(kk), ' Cell' num2str(ww)])
                 set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
                 hold on, 
@@ -222,10 +222,14 @@ for kk = 1:numel(object_files)
                 dist2 = pdist([x_centroid_object(jj), y_centroid_object(jj); x_int(2), y_int(2)], 'euclidean');
 
                 % select border closest to the object and store in new variable 'bl_int'
-                if (dist1 < dist2)
-                    bl_int = [x_int(1), y_int(1)];
-                elseif (dist2 < dist1)
-                    bl_int = [x_int(2), y_int(2)];
+                if length(x_int) < 3                   
+                    if (dist1 < dist2)
+                        bl_int = [x_int(1), y_int(1)];
+                    elseif (dist2 < dist1)
+                        bl_int = [x_int(2), y_int(2)];
+                    end
+                else
+                    % do nothing
                 end
 
                 % bl_int is the border-line intercept coordinate
@@ -247,8 +251,7 @@ for kk = 1:numel(object_files)
                 rel_dist(rel_dist > 1) = [];
                 
                 % collect data from all objects within a cell
-                obj_distances(jj) = rel_dist;
-                xy_centrod = [x_centroid_object(jj), y_centroid_object(jj)]
+                obj_distances(jj) = rel_dist; 
                 
                 % save data from all cells within an image
                 rel_distances(ww, jj) = nonzeros(rel_dist);
@@ -277,10 +280,10 @@ for kk = 1:numel(object_files)
                 % do nothing
             end
             
-            cd(centroid_sheets)
-            if ~isempty(obj_distances)
-                centroid_xy = [x_centroid, y_centroid];
-                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], obj_distances(:))
+            cd(results_sheets)
+            if ~isempty(x_centroid_object)
+                xy_centroid = [x_centroid_object, y_centroid_object];
+                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_xy_centroid.csv'], xy_centroid)
             else
                 % do nothing
             end

@@ -133,7 +133,7 @@ for kk = 1:numel(object_files)
             no_analysed_cells = no_analysed_cells + 1
             
             try, 
-                imshow(ROI, [100 200]), 
+                imshow(ROI, [120 280]), 
                 title(['Image' num2str(kk), ' Cell' num2str(ww)])
                 set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
                 hold on, 
@@ -203,7 +203,13 @@ for kk = 1:numel(object_files)
                 % set(gca,'Ydir','reverse') 
 
                 [x_int, y_int] = polyxpoly(x1, y1, B_x, B_y, 'unique'); % contains the line_border intercept
-
+                
+                if length(x_int) > 2
+                    continue
+                    % move to next loop iteration if line intersects with
+                    % more than 2 borders
+                end
+                             
                 Image6 = figure('visible','on');
                 set(gca,'Ydir','reverse')
                 mapshow(x_int,y_int,'DisplayType','point','Marker','o');
