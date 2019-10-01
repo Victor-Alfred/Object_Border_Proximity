@@ -133,7 +133,7 @@ for kk = 1:numel(object_files)
             no_analysed_cells = no_analysed_cells + 1
             
             try, 
-                imshow(ROI, [100 300]), 
+                imshow(ROI, [150 350]), 
                 title(['Image' num2str(kk), ' Cell' num2str(ww)])
                 set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
                 hold on, 
@@ -251,11 +251,6 @@ for kk = 1:numel(object_files)
 
                 rel_dist = (dist3/dist4); 
                 rel_dist(rel_dist > 1) = [];
-                
-                if isempty(rel_dist)
-                   continue
-                   % move to next loop iteration if rel_dist is zero
-                end
                 
                 % collect data from all objects within a cell
                 obj_distances(jj) = rel_dist; 
