@@ -3,19 +3,23 @@
 close all; clear variables; clc
 
 %% Setting and creating directories
+% This script automatically determines the centroid positions of objects
+% To enable ther choice between manual or automatic centroid collection of objects,
+% uncommment lines 122, 143, 149-162
+% and the objects filke is binary, after a previous thresholding step
 
 currdir = pwd;
 addpath(pwd);
 filedir = uigetdir();
 cd(filedir);
-filedir_file = dir('*.tif');
+filedir_file = dir('*.oib');
 
 % contains information on the cell borders
 borders = [filedir, '/borders/'];
 cd(borders)
 
 % binary_tifs folder contains the binary image files of the objects
-files_tifs = [filedir, '/tifs_Ecad'];
+files_tifs = [filedir, '/binary_tifs'];
 cd(files_tifs)
 object_files = dir('*.tif');
 
@@ -110,21 +114,25 @@ for kk = 1:numel(object_files)
     cd(analysis_folder)
     Output_Graph = [num2str(kk),'_borders'];
     hold off
-    print(Image1, '-dtiff', '-r300', Output_Graph);
+      print(Image1, '-dtiff', '-r300', Output_Graph);
 
     % removes first cell which is the 'whole' image
     B_fixed = B;
     B_fixed(1) = []; % Note: boundary coordinates are organised in (y, x) format
+%     reply = questdlg(strcat('Do you want to determine centroids of objects automatically?'), 'Settings', 'Yes', 'No', 'Yes');
     
     for ww = 2:length(B_fixed)
         close all
         I_mask = imdilate(poly2mask(B_fixed{ww}(:,2),B_fixed{ww}(:,1),im_x,im_y), strel('diamond', 1));
         % read in grayscale containing objects
         cd(files_tifs)
-            Q = [num2str(kk),'.tif'];
-            I_object = imread(Q);
+             Q = [num2str(kk),'.tif'];
+            I_object = imread(Q); 
+            I_object = logical(I_object);
+
             ROI = I_object;
-            ROI(~I_mask) = 0;
+            ROI(I_mask== 0) = 0;
+            ROI2 = logical(ROI); %
             
             % Image2 = figure('visible','off');
             % imshow(ROI);
@@ -132,22 +140,38 @@ for kk = 1:numel(object_files)
             % keep track of cells analysed
             no_analysed_cells = no_analysed_cells + 1
             
-            try, 
-                imshow(ROI, [150 350]), 
-                title(['Image' num2str(kk), ' Cell' num2str(ww)])
-                set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
-                hold on, 
-                % use the getpts() function; useful to see marked objects; backspace to remove previous point
-                [x_centroid_object, y_centroid_object] = getpts();
-                % alternatively use a color-customised version of ginput, my_ginput located in the same directory 
-                %[x_centroid_object, y_centroid_object] = my_ginput();
-            catch end        
+%             if strcmp(reply, 'Yes')
+                %% collect centroid positions calculated by regionprops function
+                im_object_data = regionprops (ROI2, 'Centroid', 'PixelList');
+                for jj=1:length(im_object_data)
+                    x_centroid_object(jj) = im_object_data(jj).Centroid(1);
+                    y_centroid_object(jj) = im_object_data(jj).Centroid(2);
+%                 end
+%             elseif strcmp(reply, 'No')
+%                  % to determine centroid positions manually; press enter key when finished
+%                 try, 
+%                     imshow(ROI2),
+%                     title(['Image' num2str(kk), ' Cell' num2str(ww)])
+%                     set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1])
+%                     hold on, 
+%                     % use the getpts() function; useful to see marked objects; backspace to remove previous point
+%                     [x_centroid_object, y_centroid_object] = getpts();
+%                     im_object_data = x_centroid_object;
+%                     % alternatively use a color-customised version of ginput, my_ginput located in the same directory 
+%                     %[x_centroid_object, y_centroid_object] = my_ginput();
+%                 catch end        
+            end 
           
     
             % loop through individual objects within each cell
+              if length(im_object_data) == 0
+                    continue
+                    % move to next loop iteration 
+                end
+                
             obj_distances = zeros(length(x_centroid_object), 1);
             
-            for jj=1:length(x_centroid_object)
+            for jj=1:length(im_object_data)
                 x_centroid_object = x_centroid_object(1:length(x_centroid_object));
                 y_centroid_object = y_centroid_object(1:length(x_centroid_object));
 
@@ -210,7 +234,7 @@ for kk = 1:numel(object_files)
                     % more than 2 borders
                 end
                              
-                Image6 = figure('visible','on');
+                Image6 = figure('visible','off');
                 set(gca,'Ydir','reverse')
                 mapshow(x_int,y_int,'DisplayType','point','Marker','o');
                 hold on
@@ -252,11 +276,16 @@ for kk = 1:numel(object_files)
                 rel_dist = (dist3/dist4); 
                 rel_dist(rel_dist > 1) = [];
                 
+                if isempty(rel_dist)
+                   continue
+                   % move to next loop iteration if rel_dist is zero
+                end
+                
                 % collect data from all objects within a cell
                 obj_distances(jj) = rel_dist; 
                 
                 % save data from all cells within an image
-                rel_distances(ww, jj) = nonzeros(rel_dist);
+                rel_distances(ww, jj) = rel_dist;
                 rel_distances_nnz = nonzeros(rel_distances);
                 
                 % keep track of number of images, cells and objects analysed in the session
@@ -276,6 +305,7 @@ for kk = 1:numel(object_files)
             
            % save object distances to csv file
             cd(results_sheets)
+            obj_distances = nonzeros(obj_distances);
             if ~isempty(obj_distances)
                 csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], obj_distances(:))
             else
@@ -284,6 +314,8 @@ for kk = 1:numel(object_files)
             
             cd(results_sheets)
             if ~isempty(x_centroid_object)
+                x_centroid = nonzeros(x_centroid_object);
+                y_centroid = nonzeros(y_centroid_object);
                 xy_centroid = [x_centroid_object, y_centroid_object];
                 csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_xy_centroid.csv'], xy_centroid)
             else
@@ -308,6 +340,6 @@ end
 % save total number of images, cells and objects analysed
 cd(analysis_folder)
 csvwrite('total.csv', total_no)
-all_dist(1) = [];
-csvwrite('all_distances.csv', all_dist)
+% all_dist(1) = [];
+% csvwrite('all_distances.csv', all_dist)
 close all; clear variables; clc

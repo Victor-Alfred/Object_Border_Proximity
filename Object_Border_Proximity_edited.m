@@ -1,4 +1,3 @@
-
 close all; clear variables; clc
 
 %% Setting and creating directories
@@ -14,7 +13,7 @@ borders = [filedir, '/borders/'];
 cd(borders)
 
 % binary_tifs folder contains the binary image files of the objects
-files_tifs = [filedir, '/binary_tifs'];
+files_tifs = [filedir, '/tifs_Ecad'];
 cd(files_tifs)
 object_files = dir('*.tif');
 
@@ -28,6 +27,11 @@ analysis_folder = [filedir, '/analysis'];
 no_analysed_images = 0;
 no_analysed_cells = 0;
 no_analysed_objects = 0;
+all_dist = 0;
+rel_distances = [];
+rel_distances_nnz = [];
+
+% rel_distances = zeros(N, 1);
 
 total_no = [];
 
@@ -209,6 +213,14 @@ for kk = 1:numel(filedir_file)
 
                 [x_int, y_int] = polyxpoly(x1, y1, B_x, B_y, 'unique'); % contains the line_border intercept
 
+                if length(x_int) > 2
+                    continue
+                    % move to next loop iteration if line intersects with
+                    % more than 2 borders
+                end
+
+
+
                 Image6 = figure('visible','on');
                 set(gca,'Ydir','reverse')
                 mapshow(x_int,y_int,'DisplayType','point','Marker','o');
@@ -250,6 +262,18 @@ for kk = 1:numel(filedir_file)
 
                 rel_dist = (dist3/dist4); rel_dist(rel_dist > 1) = 1;
                 rel_distances(jj) = rel_dist;
+
+                if isempty(rel_dist)
+                   continue
+                   % move to next loop iteration if rel_dist is zero
+                end
+                
+                 % collect data from all objects within a cell
+                obj_distances(jj) = rel_dist; 
+                
+                % save data from all cells within an image
+                rel_distances(ww, jj) = nonzeros(rel_dist);
+                rel_distances_nnz = nonzeros(rel_distances);
                 
                 % keep track of number of images, cells and objects analysed in the session
                 total_no = cat(3, no_analysed_images, no_analysed_cells, no_analysed_objects);
@@ -281,20 +305,41 @@ for kk = 1:numel(filedir_file)
 
             end
 
-            % save distances to csv file
-            cd(results_sheets)
+        % save object distances to csv file
+        cd(results_sheets)
+        if ~isempty(obj_distances)
+            csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], obj_distances(:))
+        else
+            % do nothing
+        end
+        
+        cd(results_sheets)
+        if ~isempty(x_centroid_object)
+            xy_centroid = [x_centroid_object, y_centroid_object];
+            csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_xy_centroid.csv'], xy_centroid)
+        else
+            % do nothing
+        end
+        
+        % concatenate for all images in the folder analysed
+        all_dist = [all_dist; rel_distances_nnz];
+
+    end
+
+    % save distances from each image to csv
+            cd(results_by_image)
             if ~isempty(rel_distances)
-                csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_rel_distances.csv'], rel_distances(:))
+                csvwrite(['Image' num2str(kk), '_rel_distances.csv'], rel_distances_nnz)
             else
                 % do nothing
             end
-
-    end
 
 end
 
 % save total number of images, cells and objects analysed
 cd(analysis_folder)
 csvwrite('total.csv', total_no)
-
+all_dist(1) = [];
+csvwrite('all_distances.csv', all_dist)
 close all; clear variables; clc
+

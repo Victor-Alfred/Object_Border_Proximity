@@ -3,12 +3,14 @@
 close all; clear variables; clc
 
 %% Setting and creating directories
+% In this script, you manually click on the objects to be analysed, 
+% and the objects file is in grayscale, not binary
 
 currdir = pwd;
 addpath(pwd);
 filedir = uigetdir();
 cd(filedir);
-filedir_file = dir('*.tif');
+filedir_file = dir('*.oib');
 
 % contains information on the cell borders
 borders = [filedir, '/borders/'];
@@ -110,7 +112,7 @@ for kk = 1:numel(object_files)
     cd(analysis_folder)
     Output_Graph = [num2str(kk),'_borders'];
     hold off
-    print(Image1, '-dtiff', '-r300', Output_Graph);
+      print(Image1, '-dtiff', '-r300', Output_Graph);
 
     % removes first cell which is the 'whole' image
     B_fixed = B;
@@ -133,7 +135,7 @@ for kk = 1:numel(object_files)
             no_analysed_cells = no_analysed_cells + 1
             
             try, 
-                imshow(ROI, [100 300]), 
+                imshow(ROI, [50 400]), 
                 title(['Image' num2str(kk), ' Cell' num2str(ww)])
                 set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
                 hold on, 
@@ -261,7 +263,7 @@ for kk = 1:numel(object_files)
                 obj_distances(jj) = rel_dist; 
                 
                 % save data from all cells within an image
-                rel_distances(ww, jj) = nonzeros(rel_dist);
+                rel_distances(ww, jj) = (rel_dist);
                 rel_distances_nnz = nonzeros(rel_distances);
                 
                 % keep track of number of images, cells and objects analysed in the session
@@ -289,6 +291,8 @@ for kk = 1:numel(object_files)
             
             cd(results_sheets)
             if ~isempty(x_centroid_object)
+                x_centroid = nonzeros(x_centroid_object);
+                y_centroid = nonzeros(y_centroid_object);
                 xy_centroid = [x_centroid_object, y_centroid_object];
                 csvwrite(['Image' num2str(kk), '_cell' num2str(ww), '_xy_centroid.csv'], xy_centroid)
             else
